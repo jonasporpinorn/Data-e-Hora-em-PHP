@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data e Hora em PHP</title>
+
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@600;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <style>
+  /* Layout: cabeçalho fixo com navegação por seções. Cada seção abre com o nome da função em mono, uma explicação curta, o código e uma área "ao vivo" que simula no navegador o que o PHP devolveria. Letras grandes para projetar em sala. */
+  :root {
+    --bg: #f2f6f5; --surface: #ffffff; --fg: #12201e; --muted: #4f625e; --line: #d2ddd9;
+    --accent: #0a6a64; --accent-ink: #ffffff; --hl: #8a5200; --hl-bg: #fff0cc;
+    --code-bg: #0e1b1a; --code-fg: #d9ebe7;
+    --c-com: #7fa69d; --c-str: #a8dd8c; --c-var: #f3b56d; --c-kw: #7fc8ff; --c-fn: #ffd479; --c-tag: #ff93a8;
+    --ok: #0f6b36; --ok-bg: #dcf4e4; --bad: #a3231b; --bad-bg: #fbe3e0;
+    --f-display: 'Bricolage Grotesque', 'Trebuchet MS', system-ui, sans-serif;
+    --f-body: 'Atkinson Hyperlegible', system-ui, 'Segoe UI', sans-serif;
+    --f-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+    --s: 1;
+    font-size: calc(16px * var(--s));
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b1312; --surface: #121f1d; --fg: #e7f0ee; --muted: #9bb2ac; --line: #263a37;
+      --accent: #4fd1c0; --accent-ink: #04201d; --hl: #f2b134; --hl-bg: #3a2d0c;
+      --code-bg: #070d0c; --code-fg: #d9ebe7;
+      --ok: #7be3a1; --ok-bg: #12301f; --bad: #ff9e96; --bad-bg: #3a1714;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b1312; --surface: #121f1d; --fg: #e7f0ee; --muted: #9bb2ac; --line: #263a37;
+    --accent: #4fd1c0; --accent-ink: #04201d; --hl: #f2b134; --hl-bg: #3a2d0c;
+    --code-bg: #070d0c; --code-fg: #d9ebe7;
+    --ok: #7be3a1; --ok-bg: #12301f; --bad: #ff9e96; --bad-bg: #3a1714;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: var(--f-body); font-size: 1.0625rem; line-height: 1.6;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+    z-index: 30; background: var(--bg);
+  }
+  .wrap {
+    max-width: 1080px; margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 3px solid var(--accent); outline-offset: 2px;
+  }
+
+  /* cabeçalho */
+  .top {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+    background: var(--bg); border-bottom: 1px solid var(--line);
+  }
+  .bar { display: flex; align-items: center; gap: 1rem; padding-block: .55rem; }
+  .brand { font-family: var(--f-display); font-weight: 800; color: var(--fg); text-decoration: none; white-space: nowrap; }
+  .top nav { display: flex; gap: .15rem; overflow-x: auto; flex: 1; min-width: 0; }
+  .top nav a {
+    white-space: nowrap; padding: .3rem .65rem; border-radius: 8px;
+    text-decoration: none; color: var(--muted); font-weight: 700; font-size: .95rem;
+  }
+  .top nav a:hover { background: var(--surface); color: var(--fg); }
+  .size { display: flex; gap: .3rem; }
+  .size button {
+    font: inherit; font-weight: 700; width: 2.4rem; padding: .25rem 0; cursor: pointer;
+    background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 8px;
+  }
+  .size button:hover { border-color: var(--accent); }
+
+  /* tipografia */
+  h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.08; }
+  h1 { font-size: clamp(2.4rem, 6vw, 4.4rem); font-weight: 800; letter-spacing: -.02em; }
+  h2 { font-size: clamp(1.9rem, 3.4vw + .8rem, 2.9rem); font-weight: 800; letter-spacing: -.01em; }
+  h3 { font-size: 1.35rem; font-weight: 600; margin-block: 1.8rem .6rem; }
+  p { margin: .8rem 0; max-width: 68ch; }
+  .lead { font-size: 1.2rem; color: var(--muted); max-width: 62ch; }
+  .eyebrow {
+    font-family: var(--f-mono); font-size: .9rem; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: .5rem;
+  }
+  code, .mono { font-family: var(--f-mono); }
+  p code, li code, td code {
+    font-size: .92em; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 6px; padding: .05em .4em;
+  }
+  section.wrap { padding-block: 3.5rem .5rem; scroll-margin-top: 4.5rem; }
+  .hero { padding-block: 3rem 0; }
+  .sec-head { display: grid; gap: .3rem; margin-bottom: 1rem; }
+
+  /* código */
+  .codewrap { position: relative; margin: 1rem 0; }
+  pre.code {
+    margin: 0; background: var(--code-bg); color: var(--code-fg);
+    font-family: var(--f-mono); font-size: 1.02rem; line-height: 1.65;
+    padding: 1.1rem 1.2rem; border-radius: 12px; overflow-x: auto; tab-size: 4;
+  }
+  pre.code code { font: inherit; background: none; border: 0; padding: 0; }
+  .c { color: var(--c-com); } .s { color: var(--c-str); } .v { color: var(--c-var); }
+  .k { color: var(--c-kw); } .f { color: var(--c-fn); } .t { color: var(--c-tag); }
+  .copy {
+    position: absolute; top: .5rem; right: .5rem; font: inherit; font-size: .8rem; font-weight: 700;
+    padding: .2rem .6rem; border-radius: 6px; cursor: pointer;
+    background: transparent; color: var(--code-fg); border: 1px solid #ffffff40; opacity: .85;
+  }
+  .copy:hover { opacity: 1; border-color: #ffffff99; }
+
+  /* tabelas */
+  .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  table.ref { width: 100%; border-collapse: collapse; font-size: 1rem; }
+  table.ref th {
+    text-align: left; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); padding: .6rem .9rem; border-bottom: 1px solid var(--line);
+  }
+  table.ref td { padding: .55rem .9rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.ref tr:last-child td { border-bottom: 0; }
+  table.ref td:first-child { white-space: nowrap; }
+  tr.core td:first-child code { background: var(--hl-bg); color: var(--hl); border-color: transparent; font-weight: 600; }
+  td.live, .live {
+    font-family: var(--f-mono); color: var(--accent); font-weight: 600;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .legend { font-size: .9rem; color: var(--muted); margin-top: .5rem; }
+  .legend code { background: var(--hl-bg); color: var(--hl); border: 0; font-weight: 600; }
+
+  /* cartões e painéis */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 1rem; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.15rem; min-width: 0; }
+  .card .fn { font-family: var(--f-mono); font-weight: 600; color: var(--accent); font-size: 1.1rem; overflow-wrap: anywhere; }
+  .card p { margin: .35rem 0 0; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.25rem; margin-block: 1rem; }
+  .panel > h3:first-child { margin-top: 0; }
+  .note {
+    background: var(--hl-bg); color: var(--fg); border-radius: 10px;
+    padding: .8rem 1rem; margin-block: 1rem; max-width: 72ch;
+  }
+  .note strong { color: var(--hl); }
+  .out {
+    font-family: var(--f-mono); font-weight: 600; color: var(--accent);
+    font-size: clamp(1.4rem, 3.2vw, 2.3rem); line-height: 1.25; overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+  }
+  .out.big { font-size: clamp(2rem, 6vw, 3.6rem); }
+  .muted { color: var(--muted); }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 1rem; align-items: start; }
+  .two > * { min-width: 0; }
+
+  /* controles */
+  .row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  label { font-weight: 700; font-size: .95rem; }
+  input[type=text], input[type=number], select {
+    font: inherit; font-family: var(--f-mono); color: var(--fg); background: var(--bg);
+    border: 2px solid var(--line); border-radius: 8px; padding: .55rem .75rem; min-width: 0;
+  }
+  input[type=text] { width: 100%; font-size: 1.15rem; }
+  input[type=number] { width: 100%; }
+  select { max-width: 100%; }
+  .chip {
+    font-family: var(--f-mono); font-size: .98rem; color: var(--fg); cursor: pointer;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: .3rem .7rem;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .args { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: .6rem; margin-block: .8rem; }
+  .args > div { min-width: 0; }
+  .args label { display: block; margin-bottom: .25rem; }
+  .args .mes label, .args .dia label { color: var(--hl); }
+  .opts { display: grid; gap: .6rem; margin-block: 1rem; }
+  .opt {
+    font-family: var(--f-mono); font-size: 1.1rem; text-align: left; cursor: pointer; color: var(--fg);
+    background: var(--bg); border: 2px solid var(--line); border-radius: 10px; padding: .7rem 1rem;
+  }
+  .opt:hover { border-color: var(--accent); }
+  .opt.ok { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+  .opt.bad { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
+  .verdict { font-weight: 700; margin-top: .5rem; }
+  .verdict.ok { color: var(--ok); } .verdict.bad { color: var(--bad); }
+  ul.plain { margin: .6rem 0; padding-left: 1.2rem; max-width: 68ch; }
+  ul.plain li { margin: .3rem 0; }
+  footer { padding-block: 3rem 4rem; color: var(--muted); font-size: .95rem; }
+  @media (max-width: 560px) { .bar { gap: .5rem; } .brand { display: none; } }
+  </style>
+
+</head>
+
+
+
+<body>
+
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="#topo">PHP · Data e Hora</a>
+    <nav aria-label="Seções da aula">
+      <a href="#funcoes">Funções</a>
+      <a href="#date">date()</a>
+      <a href="#hora">Hora</a>
+      <a href="#fuso">Fuso</a>
+      <a href="#mktime">mktime()</a>
+      <a href="#time">time()</a>
+      <a href="#strtotime">strtotime()</a>
+      <a href="#sabados">Sábados</a>
+      <a href="#exercicio">Exercício</a>
+      <a href="#resumo">Resumo</a>
+    </nav>
+    <div class="size" role="group" aria-label="Tamanho do texto">
+      <button type="button" id="sizeDown" aria-label="Diminuir texto">A−</button>
+      <button type="button" id="sizeUp" aria-label="Aumentar texto">A+</button>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="wrap hero" id="topo">
+  <div class="eyebrow">Aula de PHP</div>
+  <h1>Data e hora em PHP</h1>
+  <p class="lead">Como mostrar, calcular e converter datas no formato brasileiro. Os quadros "ao vivo" desta página rodam no navegador e simulam o que o PHP devolveria.</p>
+  <div class="panel">
+    <div class="two">
+      <div>
+        <div class="muted">Agora, no fuso escolhido</div>
+        <div class="out big" id="heroClock" aria-live="off">--/--/---- --:--:--</div>
+      </div>
+      <div>
+        <label for="tz">Fuso horário desta página</label>
+        <select id="tz"></select>
+        <p class="muted" style="margin-bottom:0">Troque o fuso e veja todos os exemplos mudarem junto.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="funcoes">
+  <div class="sec-head">
+    <div class="eyebrow">Visão geral</div>
+    <h2>As funções principais</h2>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="fn">date()</div><p>Formata uma data e/ou hora local.</p></div>
+    <div class="card"><div class="fn">mktime()</div><p>Devolve o timestamp Unix de uma data.</p></div>
+    <div class="card"><div class="fn">strtotime()</div><p>Converte um texto de data em inglês para timestamp Unix.</p></div>
+    <div class="card"><div class="fn">time()</div><p>Devolve o timestamp Unix do momento atual.</p></div>
+    <div class="card"><div class="fn">date_default_timezone_set()</div><p>Define o fuso horário padrão do script.</p></div>
+    <div class="card"><div class="fn">date_default_timezone_get()</div><p>Consulta o fuso horário padrão em uso.</p></div>
+  </div>
+  <h3>O que é um timestamp Unix?</h3>
+  <p>É o número de segundos desde <strong>01/01/1970 às 00:00:00 GMT</strong>. É assim que o PHP guarda uma data por dentro. As funções acima servem para ir e voltar entre esse número e uma data legível.</p>
+  <div class="panel">
+    <div class="muted">Timestamp de agora</div>
+    <div class="out" id="tsHero">0</div>
+    <p class="muted" style="margin-bottom:0">Isso é cerca de <span class="live" id="tsYears">0</span> anos de segundos desde 1970.</p>
+  </div>
+</section>
+
+<section class="wrap" id="date">
+  <div class="sec-head">
+    <div class="eyebrow">date()</div>
+    <h2>Formatando a data</h2>
+  </div>
+  <p>A função <code>date()</code> transforma um timestamp em texto legível. O primeiro argumento é o <strong>formato</strong>, obrigatório. O segundo é o timestamp, opcional: sem ele, vale o momento atual.</p>
+  <div class="codewrap"><pre class="code">date(formato, timestamp)</pre></div>
+
+  <div class="panel">
+    <h3>Monte seu formato</h3>
+    <p class="muted" style="margin-top:0">Digite ou clique nas letras para inserir. Para escrever uma letra literal, use barra invertida antes dela, por exemplo <code>\d</code>.</p>
+    <label for="fmt">Formato</label>
+    <input type="text" id="fmt" value="d/m/Y" autocomplete="off" spellcheck="false">
+    <div class="row" style="margin-block:.8rem" id="presets"></div>
+    <div class="muted">PHP:</div>
+    <div class="codewrap"><pre class="code" id="simCode" data-live="1"></pre></div>
+    <div class="muted">Saída:</div>
+    <div class="out" id="simOut">&nbsp;</div>
+    <div class="row" style="margin-top:.8rem" id="chips"></div>
+  </div>
+
+  <h3>Caracteres de data</h3>
+  <div class="scroll">
+    <table class="ref">
+      <thead><tr><th>Letra</th><th>Significado</th><th>Agora</th></tr></thead>
+      <tbody id="tbl-date"></tbody>
+    </table>
+  </div>
+  <p class="legend">Letras com <code>destaque</code> são as que aparecem na página original. As demais são extras úteis. Note que <code>l</code> (L minúsculo), <code>F</code>, <code>D</code> e <code>M</code> sempre devolvem inglês.</p>
+
+  <h3>Três jeitos de escrever a data brasileira</h3>
+  <div class="codewrap"><pre class="code">&lt;?php
+echo date("d/m/Y");   // 15/11/2026
+echo date("d-m-Y");   // 15-11-2026
+echo date("d.m.Y");   // 15.11.2026
+?&gt;</pre></div>
+
+  <h3>Dica: ano de copyright automático</h3>
+  <div class="codewrap"><pre class="code">&amp;copy; 2010-&lt;?php echo date("Y"); ?&gt;</pre></div>
+  <div class="panel"><span class="muted">Resultado:</span> <span class="out" style="font-size:1.4rem" id="copyDemo"></span></div>
+</section>
+
+<section class="wrap" id="hora">
+  <div class="sec-head">
+    <div class="eyebrow">date()</div>
+    <h2>Exibindo a hora</h2>
+  </div>
+  <p>A mesma <code>date()</code> formata horas. Basta usar as letras de hora no formato.</p>
+  <div class="scroll">
+    <table class="ref">
+      <thead><tr><th>Letra</th><th>Significado</th><th>Agora</th></tr></thead>
+      <tbody id="tbl-time"></tbody>
+    </table>
+  </div>
+  <div class="codewrap"><pre class="code">&lt;?php
+echo "Agora são " . date("H:i:s") . "&lt;br&gt;";   // formato 24h
+echo "Agora são " . date("h:i:s a");           // formato 12h com am/pm
+?&gt;</pre></div>
+  <div class="panel">
+    <div class="out" id="horaA">&nbsp;</div>
+    <div class="out" id="horaB">&nbsp;</div>
+  </div>
+</section>
+
+<section class="wrap" id="fuso">
+  <div class="sec-head">
+    <div class="eyebrow">date_default_timezone_set()</div>
+    <h2>Fuso horário</h2>
+  </div>
+  <p>A função <code>date()</code> usa a hora <strong>do servidor</strong>. Muitos servidores de hospedagem ficam em UTC, e seu site mostraria a hora errada para o Brasil. Para acertar, defina o fuso antes de usar <code>date()</code>.</p>
+  <div class="codewrap"><pre class="code">&lt;?php
+date_default_timezone_set("America/Sao_Paulo");
+echo "Data e hora: " . date("d/m/Y H:i:s");
+echo date_default_timezone_get();   // America/Sao_Paulo
+?&gt;</pre></div>
+  <h3>O mesmo instante, em fusos diferentes</h3>
+  <div class="scroll">
+    <table class="ref">
+      <thead><tr><th>Fuso</th><th>Diferença para UTC</th><th>date("d/m/Y H:i:s")</th></tr></thead>
+      <tbody id="tbl-tz"></tbody>
+    </table>
+  </div>
+  <div class="note"><strong>Atenção:</strong> compare a linha UTC com America/Sao_Paulo. Se o servidor estiver em UTC e você esquecer o <code>date_default_timezone_set()</code>, é essa hora que aparece no site.</div>
+</section>
+
+<section class="wrap" id="mktime">
+  <div class="sec-head">
+    <div class="eyebrow">mktime()</div>
+    <h2>Timestamp de uma data específica</h2>
+  </div>
+  <div class="codewrap"><pre class="code">mktime(hora, minuto, segundo, mês, dia, ano)</pre></div>
+  <div class="note"><strong>Cuidado com a ordem:</strong> o <strong>mês</strong> vem antes do <strong>dia</strong>, o contrário do nosso formato brasileiro.</div>
+  <div class="panel">
+    <h3>Teste os argumentos</h3>
+    <div class="args">
+      <div><label for="mk-h">hora</label><input type="number" id="mk-h" value="0"></div>
+      <div><label for="mk-i">minuto</label><input type="number" id="mk-i" value="0"></div>
+      <div><label for="mk-s">segundo</label><input type="number" id="mk-s" value="0"></div>
+      <div class="mes"><label for="mk-m">mês</label><input type="number" id="mk-m" value="10"></div>
+      <div class="dia"><label for="mk-d">dia</label><input type="number" id="mk-d" value="3"></div>
+      <div><label for="mk-y">ano</label><input type="number" id="mk-y" value="1975"></div>
+    </div>
+    <div class="codewrap"><pre class="code" id="mkCode" data-live="1"></pre></div>
+    <div class="muted">Timestamp (fuso UTC):</div>
+    <div class="out" id="mkTs">&nbsp;</div>
+    <div class="muted" style="margin-top:.6rem">Dia da semana, com <code>date("l", $d)</code>:</div>
+    <div class="out" id="mkDow">&nbsp;</div>
+    <p class="muted" style="margin-bottom:0" id="mkPt"></p>
+  </div>
+  <p>Experimente mês <code>13</code>: o PHP avança para janeiro do ano seguinte. O <code>mktime()</code> acerta valores que passam do limite.</p>
+  <div class="codewrap"><pre class="code">&lt;?php
+date_default_timezone_set("UTC");
+$d = mktime(0, 0, 0, 10, 3, 1975);
+echo "3 de outubro de 1975 foi " . date("l", $d);   // Friday
+?&gt;</pre></div>
+</section>
+
+<section class="wrap" id="time">
+  <div class="sec-head">
+    <div class="eyebrow">time()</div>
+    <h2>O timestamp de agora</h2>
+  </div>
+  <p>Sem argumentos, <code>time()</code> devolve os segundos desde 1970 até este instante. Combine com <code>date()</code> para deixar legível.</p>
+  <div class="codewrap"><pre class="code">&lt;?php
+$ts = time();                          // timestamp atual
+echo date("d/m/Y H:i:s", $ts);         // data legível
+?&gt;</pre></div>
+  <div class="two">
+    <div class="panel"><div class="muted">$ts</div><div class="out" id="tsA">0</div></div>
+    <div class="panel"><div class="muted">date("d/m/Y H:i:s", $ts)</div><div class="out" id="tsB">&nbsp;</div></div>
+  </div>
+</section>
+
+<section class="wrap" id="strtotime">
+  <div class="sec-head">
+    <div class="eyebrow">strtotime()</div>
+    <h2>De texto para timestamp</h2>
+  </div>
+  <p>A <code>strtotime()</code> entende textos <strong>em inglês</strong> e devolve um timestamp.</p>
+  <div class="codewrap"><pre class="code">strtotime(texto, timestamp_base)</pre></div>
+  <div class="scroll">
+    <table class="ref">
+      <thead><tr><th>Texto</th><th>Resultado agora</th><th>Em português</th></tr></thead>
+      <tbody id="tbl-str"></tbody>
+    </table>
+  </div>
+  <p class="legend">Resultados calculados a partir de agora, no fuso escolhido, no formato <code>d/m/Y H:i:s</code>.</p>
+  <div class="note"><strong>Dica:</strong> a <code>strtotime()</code> não é perfeita. Sempre confira os textos que você passa e teste o retorno: ela devolve <code>false</code> quando não entende.</div>
+
+  <div class="panel">
+    <h3>Armadilha brasileira: dia/mês/ano</h3>
+    <p style="margin-top:0">Com barras, o PHP lê <strong>mês/dia/ano</strong>, o formato americano. Com hífen ou ponto, lê dia/mês/ano. Teste:</p>
+    <label for="pit">Texto da data</label>
+    <input type="text" id="pit" value="15/11/2026" autocomplete="off" spellcheck="false">
+    <div class="row" style="margin-block:.8rem" id="pitChips"></div>
+    <div class="muted">O PHP entende como:</div>
+    <div class="out" id="pitOut">&nbsp;</div>
+    <p class="muted" id="pitMsg" style="margin-bottom:0"></p>
+  </div>
+  <p>A forma segura de ler uma data brasileira é o <code>DateTime</code>:</p>
+  <div class="codewrap"><pre class="code">&lt;?php
+$data = DateTime::createFromFormat('d/m/Y', '15/11/2026');
+echo $data-&gt;format('Y-m-d');   // 2026-11-15, formato do banco de dados
+?&gt;</pre></div>
+</section>
+
+<section class="wrap" id="sabados">
+  <div class="sec-head">
+    <div class="eyebrow">Exemplo completo</div>
+    <h2>Os próximos seis sábados</h2>
+  </div>
+  <div class="codewrap"><pre class="code">&lt;?php
+$inicio = strtotime("Saturday");
+$fim = strtotime("+6 weeks", $inicio);
+
+while ($inicio &lt; $fim) {
+    echo date("d/m", $inicio) . "&lt;br&gt;";
+    $inicio = strtotime("+1 week", $inicio);
+}
+?&gt;</pre></div>
+  <div class="panel">
+    <div class="muted">Saída hoje (se hoje for sábado, o primeiro item é hoje):</div>
+    <div class="row" id="satList" style="margin-top:.5rem"></div>
+  </div>
+</section>
+
+<section class="wrap" id="exercicio">
+  <div class="sec-head">
+    <div class="eyebrow">Exercício</div>
+    <h2>Qual retorna o ano completo?</h2>
+  </div>
+  <div class="codewrap"><pre class="code">$d = strtotime('10:30pm May 5 2025');</pre></div>
+  <p>Qual é a sintaxe correta para retornar o ano completo (2025)?</p>
+  <div class="opts" id="opts">
+    <button type="button" class="opt" data-ok="0">date('y', $d)</button>
+    <button type="button" class="opt" data-ok="1">date('Y', $d)</button>
+    <button type="button" class="opt" data-ok="0">date('YYYY', $d)</button>
+  </div>
+  <div class="verdict" id="verdict" role="status"></div>
+  <p class="muted" id="explain" hidden>O <code>Y</code> maiúsculo dá 4 dígitos (2025). O <code>y</code> minúsculo dá só 2 dígitos (25). E <code>YYYY</code> imprimiria o <code>Y</code> quatro vezes, porque cada letra é interpretada separadamente.</p>
+</section>
+
+<section class="wrap" id="resumo">
+  <div class="sec-head">
+    <div class="eyebrow">Para levar</div>
+    <h2>Resumo para o Brasil</h2>
+  </div>
+  <div class="codewrap"><pre class="code">&lt;?php
+date_default_timezone_set('America/Sao_Paulo');
+
+echo date("d/m/Y");          // 15/11/2026
+echo date("H:i:s");          // 19:06:30
+echo date("d/m/Y H:i:s");    // 15/11/2026 19:06:30
+?&gt;</pre></div>
+  <h3>Fusos úteis no Brasil</h3>
+  <ul class="plain">
+    <li><code>America/Sao_Paulo</code>: horário de Brasília</li>
+    <li><code>America/Fortaleza</code>: Nordeste (inclui o Rio Grande do Norte)</li>
+    <li><code>America/Manaus</code>: Amazonas (UTC−4)</li>
+    <li><code>America/Rio_Branco</code>: Acre (UTC−5)</li>
+  </ul>
+  <h3>Nomes em português</h3>
+  <p><code>date()</code> sempre responde em inglês. Para "domingo, 15 de novembro de 2026", use <code>IntlDateFormatter</code> (precisa da extensão <code>intl</code>) ou arrays.</p>
+  <div class="two">
+    <div class="codewrap"><pre class="code">&lt;?php
+$fmt = new IntlDateFormatter(
+    'pt_BR',
+    IntlDateFormatter::FULL,
+    IntlDateFormatter::NONE,
+    'America/Sao_Paulo',
+    IntlDateFormatter::GREGORIAN,
+    "EEEE, d 'de' MMMM 'de' yyyy"
+);
+echo $fmt-&gt;format(new DateTime());
+?&gt;</pre></div>
+    <div class="codewrap"><pre class="code">&lt;?php
+$dias = ['domingo','segunda-feira','terça-feira',
+  'quarta-feira','quinta-feira','sexta-feira','sábado'];
+$meses = [1=>'janeiro','fevereiro','março','abril',
+  'maio','junho','julho','agosto','setembro',
+  'outubro','novembro','dezembro'];
+
+$h = new DateTime();
+echo $dias[$h-&gt;format('w')] . ', '
+   . $h-&gt;format('j') . ' de '
+   . $meses[(int)$h-&gt;format('n')] . ' de '
+   . $h-&gt;format('Y');
+?&gt;</pre></div>
+  </div>
+  <div class="panel"><span class="muted">Resultado hoje:</span><div class="out" id="ptDemo">&nbsp;</div></div>
+  <div class="note"><strong>Evite:</strong> <code>strftime()</code> com <code>setlocale()</code> também traduzia, mas está obsoleta desde o PHP 8.1.</div>
+</section>
+</main>
+
+<footer class="wrap">
+  Material de aula em português, baseado na página "PHP Date and Time" do W3Schools, com exemplos adaptados ao Brasil. Os resultados "ao vivo" são simulados no navegador.
+</footer>
+
+<script>
+(function () {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  var EN_D = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var EN_M = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var pad = function (n, l) { return String(n).padStart(l || 2, '0'); };
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  /* ---------- tempo e formatação (simula o date() do PHP) ---------- */
+  var fcache = {};
+  function zoneParts(ms, tz) {
+    var f = fcache[tz];
+    if (!f) {
+      f = fcache[tz] = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' });
+    }
+    var o = {};
+    f.formatToParts(ms).forEach(function (p) { o[p.type] = p.value; });
+    return o;
+  }
+  // "wall" é um Date cujos campos UTC mostram o relógio de parede do fuso escolhido
+  function nowIn(tz) {
+    var sec = Math.floor(Date.now() / 1000) * 1000;
+    var p = zoneParts(sec, tz);
+    var asUTC = Date.UTC(+p.year, +p.month - 1, +p.day, (+p.hour) % 24, +p.minute, +p.second);
+    return { wall: new Date(asUTC), off: (asUTC - sec) / 60000 };
+  }
+  function phpDate(pattern, wall, off, tz) {
+    var Y = wall.getUTCFullYear(), mo = wall.getUTCMonth() + 1, d = wall.getUTCDate(), w = wall.getUTCDay();
+    var H = wall.getUTCHours(), mi = wall.getUTCMinutes(), s = wall.getUTCSeconds();
+    var h12 = H % 12 || 12, leap = (Y % 4 === 0 && Y % 100 !== 0) || Y % 400 === 0;
+    var out = '';
+    for (var i = 0; i < pattern.length; i++) {
+      var c = pattern[i];
+      switch (c) {
+        case '\\': i++; out += pattern[i] || ''; break;
+        case 'd': out += pad(d); break;
+        case 'j': out += d; break;
+        case 'D': out += EN_D[w].slice(0, 3); break;
+        case 'l': out += EN_D[w]; break;
+        case 'N': out += (w === 0 ? 7 : w); break;
+        case 'w': out += w; break;
+        case 'z': out += Math.round((Date.UTC(Y, mo - 1, d) - Date.UTC(Y, 0, 1)) / 864e5); break;
+        case 'm': out += pad(mo); break;
+        case 'n': out += mo; break;
+        case 'F': out += EN_M[mo - 1]; break;
+        case 'M': out += EN_M[mo - 1].slice(0, 3); break;
+        case 't': out += new Date(Date.UTC(Y, mo, 0)).getUTCDate(); break;
+        case 'L': out += leap ? 1 : 0; break;
+        case 'Y': out += Y; break;
+        case 'y': out += pad(Y % 100); break;
+        case 'a': out += H < 12 ? 'am' : 'pm'; break;
+        case 'A': out += H < 12 ? 'AM' : 'PM'; break;
+        case 'g': out += h12; break;
+        case 'G': out += H; break;
+        case 'h': out += pad(h12); break;
+        case 'H': out += pad(H); break;
+        case 'i': out += pad(mi); break;
+        case 's': out += pad(s); break;
+        case 'e': out += tz; break;
+        case 'P': var a = Math.abs(off); out += (off < 0 ? '-' : '+') + pad(Math.floor(a / 60)) + ':' + pad(a % 60); break;
+        case 'U': out += Math.floor(wall.getTime() / 1000 - off * 60); break;
+        default: out += c;
+      }
+    }
+    return out;
+  }
+
+  /* ---------- realce de código ---------- */
+  function hl(src) {
+    var esc = src.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return esc.replace(/(\/\/[^\n]*)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\$\w+)|(&lt;\?php|\?&gt;)|\b(echo|while|new|class)\b|\b([A-Za-z_]\w*)(?=\()/g,
+      function (m, c, s, v, t, k, f) {
+        if (c) return '<span class="c">' + c + '</span>';
+        if (s) return '<span class="s">' + s + '</span>';
+        if (v) return '<span class="v">' + v + '</span>';
+        if (t) return '<span class="t">' + t + '</span>';
+        if (k) return '<span class="k">' + k + '</span>';
+        if (f) return '<span class="f">' + f + '</span>';
+        return m;
+      });
+  }
+  function setCode(pre, text) { pre.innerHTML = '<code>' + hl(text) + '</code>'; pre.dataset.raw = text; }
+  $$('pre.code').forEach(function (pre) {
+    var raw = pre.textContent.replace(/^\n/, '').replace(/\s+$/, '');
+    setCode(pre, raw);
+    var wrap = pre.parentNode;
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'copy'; b.textContent = 'Copiar';
+    b.addEventListener('click', function () {
+      var done = function (t) { b.textContent = t; setTimeout(function () { b.textContent = 'Copiar'; }, 1500); };
+      var fallback = function () {
+        var r = document.createRange(); r.selectNodeContents(pre);
+        var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); done('Selecionado');
+      };
+      try { navigator.clipboard.writeText(pre.dataset.raw).then(function () { done('Copiado'); }, fallback); } catch (e) { fallback(); }
+    });
+    wrap.appendChild(b);
+  });
+
+  /* ---------- tamanho do texto ---------- */
+  var sizes = [0.9, 1, 1.15, 1.3, 1.5], sizeIdx = 1;
+  var savedSize = parseInt(store.get('aula-size'), 10);
+  if (savedSize >= 0 && savedSize < sizes.length) sizeIdx = savedSize;
+  function applySize() { document.documentElement.style.setProperty('--s', sizes[sizeIdx]); store.set('aula-size', sizeIdx); }
+  $('#sizeDown').addEventListener('click', function () { sizeIdx = Math.max(0, sizeIdx - 1); applySize(); });
+  $('#sizeUp').addEventListener('click', function () { sizeIdx = Math.min(sizes.length - 1, sizeIdx + 1); applySize(); });
+  applySize();
+
+  /* ---------- fuso ---------- */
+  var ZONES = ['America/Sao_Paulo', 'America/Fortaleza', 'America/Manaus', 'America/Rio_Branco', 'America/Noronha', 'America/New_York', 'UTC'];
+  var tzSel = $('#tz');
+  ZONES.forEach(function (z) { var o = document.createElement('option'); o.value = z; o.textContent = z; tzSel.appendChild(o); });
+  var savedTz = store.get('aula-tz');
+  tzSel.value = ZONES.indexOf(savedTz) >= 0 ? savedTz : 'America/Sao_Paulo';
+  tzSel.addEventListener('change', function () { store.set('aula-tz', tzSel.value); render(); });
+
+  /* ---------- tabelas de letras ---------- */
+  var DATE_CHARS = [
+    ['d', 'Dia do mês com 2 dígitos (01 a 31)', 1], ['j', 'Dia do mês sem zero (1 a 31)', 1],
+    ['D', 'Dia da semana abreviado'], ['l', 'Dia da semana por extenso (L minúsculo)', 1],
+    ['N', 'Dia da semana em número (1 = segunda a 7 = domingo)'], ['w', 'Dia da semana em número (0 = domingo a 6 = sábado)'],
+    ['z', 'Dia do ano (0 a 365)'], ['m', 'Mês com 2 dígitos (01 a 12)', 1], ['n', 'Mês sem zero (1 a 12)'],
+    ['F', 'Mês por extenso', 1], ['M', 'Mês abreviado'], ['t', 'Quantidade de dias do mês'],
+    ['L', 'Ano bissexto? (1 = sim, 0 = não)'], ['Y', 'Ano com 4 dígitos', 1], ['y', 'Ano com 2 dígitos']
+  ];
+  var TIME_CHARS = [
+    ['H', 'Hora no formato 24h (00 a 23)', 1], ['h', 'Hora no formato 12h com zero (01 a 12)', 1],
+    ['G', 'Hora 24h sem zero (0 a 23)'], ['g', 'Hora 12h sem zero (1 a 12)'],
+    ['i', 'Minutos com zero (00 a 59)', 1], ['s', 'Segundos com zero (00 a 59)', 1],
+    ['a', 'am ou pm em minúsculo', 1], ['A', 'AM ou PM em maiúsculo'],
+    ['e', 'Identificador do fuso horário'], ['P', 'Diferença para UTC'], ['U', 'Timestamp Unix']
+  ];
+  function fillChars(tbody, list) {
+    list.forEach(function (r) {
+      var tr = document.createElement('tr');
+      if (r[2]) tr.className = 'core';
+      tr.innerHTML = '<td><code>' + r[0] + '</code></td><td>' + r[1] + '</td><td class="live" data-ch="' + r[0] + '"></td>';
+      tbody.appendChild(tr);
+    });
+  }
+  fillChars($('#tbl-date'), DATE_CHARS);
+  fillChars($('#tbl-time'), TIME_CHARS);
+
+  /* ---------- simulador de formato ---------- */
+  var fmt = $('#fmt');
+  var PRESETS = [['d/m/Y', 'd/m/Y'], ['d-m-Y', 'd-m-Y'], ['d.m.Y', 'd.m.Y'], ['Y-m-d (banco)', 'Y-m-d'], ['d/m/Y H:i:s', 'd/m/Y H:i:s'], ['l, F j, Y', 'l, F j, Y'], ['h:i:s a', 'h:i:s a']];
+  PRESETS.forEach(function (p) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = p[0];
+    b.addEventListener('click', function () { fmt.value = p[1]; render(); });
+    $('#presets').appendChild(b);
+  });
+  'dDjlNwzmnFMtLYyaAgGhHisePU'.split('').forEach(function (c) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = c;
+    b.setAttribute('aria-label', 'Inserir ' + c);
+    b.addEventListener('click', function () {
+      var a = fmt.selectionStart == null ? fmt.value.length : fmt.selectionStart;
+      var z = fmt.selectionEnd == null ? a : fmt.selectionEnd;
+      fmt.setRangeText(c, a, z, 'end'); fmt.focus(); render();
+    });
+    $('#chips').appendChild(b);
+  });
+  fmt.addEventListener('input', render);
+
+  /* ---------- tabela de fusos ---------- */
+  ZONES.forEach(function (z) {
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td><code>' + z + '</code></td><td class="live" data-zoff="' + z + '"></td><td class="live" data-zdate="' + z + '"></td>';
+    $('#tbl-tz').appendChild(tr);
+  });
+
+  /* ---------- strtotime ---------- */
+  function mid(w) { return new Date(Date.UTC(w.getUTCFullYear(), w.getUTCMonth(), w.getUTCDate())); }
+  function addDays(w, n) { return new Date(w.getTime() + n * 864e5); }
+  function nextDow(w, target, strict) {
+    var m = mid(w), ahead = (target - m.getUTCDay() + 7) % 7;
+    if (strict && ahead === 0) ahead = 7;
+    return addDays(m, ahead);
+  }
+  var STR_ROWS = [
+    ['now', function (w) { return w; }, 'Agora'],
+    ['+5 days', function (w) { return addDays(w, 5); }, 'Daqui a 5 dias, mesma hora'],
+    ['+2 weeks 4 days 2 hours 20 seconds', function (w) { return new Date(w.getTime() + 18 * 864e5 + 2 * 36e5 + 20e3); }, 'Daqui a 18 dias, 2 horas e 20 segundos'],
+    ['tomorrow', function (w) { return addDays(mid(w), 1); }, 'Amanhã à meia-noite'],
+    ['last Sunday', function (w) { var m = mid(w), dow = m.getUTCDay(); return addDays(m, -(dow === 0 ? 7 : dow)); }, 'O domingo anterior, à meia-noite'],
+    ['next Monday', function (w) { return nextDow(w, 1, true); }, 'A próxima segunda-feira, à meia-noite'],
+    ['Saturday', function (w) { return nextDow(w, 6, false); }, 'O próximo sábado (hoje, se for sábado)'],
+    ['10:30pm November 15 2026', function () { return new Date(Date.UTC(2026, 10, 15, 22, 30, 0)); }, 'Data e hora fixas']
+  ];
+  STR_ROWS.forEach(function (r, i) {
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td><code>' + r[0] + '</code></td><td class="live" data-str="' + i + '"></td><td>' + r[2] + '</td>';
+    $('#tbl-str').appendChild(tr);
+  });
+
+  /* ---------- armadilha dd/mm/aaaa ---------- */
+  var pit = $('#pit');
+  ['15/11/2026', '03/04/2026', '15-11-2026', '15.11.2026', '2026-11-15'].forEach(function (t) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = t;
+    b.addEventListener('click', function () { pit.value = t; pitRender(); });
+    $('#pitChips').appendChild(b);
+  });
+  function validDMY(d, m, y) { var t = new Date(Date.UTC(y, m - 1, d)); return m >= 1 && m <= 12 && t.getUTCDate() === d && t.getUTCMonth() === m - 1; }
+  function longPt(d, m, y) { return d + ' de ' + MESES[m - 1] + ' de ' + y; }
+  function pitRender() {
+    var v = pit.value.trim(), out = $('#pitOut'), msg = $('#pitMsg'), m;
+    if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(v))) {
+      var mm = +m[1], dd = +m[2], yy = +m[3];
+      if (!validDMY(dd, mm, yy)) { out.textContent = 'false'; msg.textContent = 'Com barras o PHP lê mês/dia/ano. O mês ' + mm + ' não existe, então a conversão falha.'; return; }
+      out.textContent = longPt(dd, mm, yy);
+      msg.textContent = mm === dd ? 'Aqui dia e mês são iguais, então o resultado coincide.' : 'Cuidado: você pode ter pensado em ' + longPt(mm, dd, yy).replace(/^(\d+) de (\S+)/, '$1 de $2') + '. Com barras, o PHP leu o primeiro número como mês.';
+      if (mm !== dd && validDMY(mm, dd, yy)) msg.textContent = 'Cuidado: você queria ' + longPt(mm, dd, yy) + ', mas com barras o PHP leu o primeiro número como mês.';
+      return;
+    }
+    if ((m = /^(\d{1,2})[-.](\d{1,2})[-.](\d{4})$/.exec(v))) {
+      if (!validDMY(+m[1], +m[2], +m[3])) { out.textContent = 'false'; msg.textContent = 'Data inválida.'; return; }
+      out.textContent = longPt(+m[1], +m[2], +m[3]); msg.textContent = 'Com hífen ou ponto o PHP lê dia-mês-ano. Está correto.'; return;
+    }
+    if ((m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v))) {
+      if (!validDMY(+m[3], +m[2], +m[1])) { out.textContent = 'false'; msg.textContent = 'Data inválida.'; return; }
+      out.textContent = longPt(+m[3], +m[2], +m[1]); msg.textContent = 'O formato ano-mês-dia (ISO) nunca confunde o PHP.'; return;
+    }
+    out.textContent = '?'; msg.textContent = 'Este simulador só reconhece dd/mm/aaaa, dd-mm-aaaa, dd.mm.aaaa e aaaa-mm-dd.';
+  }
+  pit.addEventListener('input', pitRender);
+
+  /* ---------- mktime ---------- */
+  var mk = ['h', 'i', 's', 'm', 'd', 'y'].map(function (k) { return $('#mk-' + k); });
+  function mkRender() {
+    var n = mk.map(function (e) { var x = parseInt(e.value, 10); return isNaN(x) ? 0 : x; });
+    setCode($('#mkCode'), '$d = mktime(' + n.join(', ') + ');\necho date("l", $d);');
+    var ms = Date.UTC(n[5], n[3] - 1, n[4], n[0], n[1], n[2]);
+    if (n[5] >= 0 && n[5] < 100) { var t = new Date(ms); t.setUTCFullYear(n[5]); ms = t.getTime(); }
+    var t2 = new Date(ms);
+    $('#mkTs').textContent = String(Math.floor(ms / 1000));
+    $('#mkDow').textContent = EN_D[t2.getUTCDay()];
+    $('#mkPt').textContent = 'Data resultante: ' + pad(t2.getUTCDate()) + '/' + pad(t2.getUTCMonth() + 1) + '/' + t2.getUTCFullYear() + ' ' + pad(t2.getUTCHours()) + ':' + pad(t2.getUTCMinutes()) + ':' + pad(t2.getUTCSeconds()) + ' UTC';
+  }
+  mk.forEach(function (e) { e.addEventListener('input', mkRender); });
+
+  /* ---------- exercício ---------- */
+  $$('.opt').forEach(function (b) {
+    b.addEventListener('click', function () {
+      $$('.opt').forEach(function (o) { o.classList.remove('ok', 'bad'); });
+      var ok = b.dataset.ok === '1', v = $('#verdict');
+      b.classList.add(ok ? 'ok' : 'bad');
+      v.className = 'verdict ' + (ok ? 'ok' : 'bad');
+      v.textContent = ok ? 'Correto!' : 'Ainda não. Tente outra opção.';
+      $('#explain').hidden = !ok;
+    });
+  });
+
+  /* ---------- atualização ao vivo ---------- */
+  function render() {
+    var tz = tzSel.value, n = nowIn(tz), w = n.wall, off = n.off;
+    var ts = Math.floor(Date.now() / 1000);
+    $('#heroClock').textContent = phpDate('d/m/Y H:i:s', w, off, tz);
+    $('#tsHero').textContent = ts;
+    $('#tsYears').textContent = (ts / 31557600).toFixed(2).replace('.', ',');
+    $$('[data-ch]').forEach(function (td) { td.textContent = phpDate(td.dataset.ch, w, off, tz); });
+    var f = fmt.value;
+    setCodeIfChanged($('#simCode'), 'date_default_timezone_set("' + tz + '");\necho date("' + f.replace(/"/g, '\\"') + '");');
+    $('#simOut').textContent = phpDate(f, w, off, tz) || ' ';
+    $('#copyDemo').textContent = '© 2010-' + phpDate('Y', w, off, tz);
+    $('#horaA').textContent = 'Agora são ' + phpDate('H:i:s', w, off, tz);
+    $('#horaB').textContent = 'Agora são ' + phpDate('h:i:s a', w, off, tz);
+    ZONES.forEach(function (z) {
+      var zn = nowIn(z);
+      $('[data-zoff="' + z + '"]').textContent = 'UTC' + phpDate('P', zn.wall, zn.off, z);
+      $('[data-zdate="' + z + '"]').textContent = phpDate('d/m/Y H:i:s', zn.wall, zn.off, z);
+    });
+    $('#tsA').textContent = ts;
+    $('#tsB').textContent = phpDate('d/m/Y H:i:s', w, off, tz);
+    $$('[data-str]').forEach(function (td) { td.textContent = phpDate('d/m/Y H:i:s', STR_ROWS[+td.dataset.str][1](w), off, tz); });
+    var sat = nextDow(w, 6, false), box = $('#satList'), html = '';
+    for (var i = 0; i < 6; i++) { html += '<span class="chip on">' + phpDate('d/m', addDays(sat, 7 * i), off, tz) + '</span>'; }
+    if (box.dataset.h !== html) { box.innerHTML = html; box.dataset.h = html; }
+    $('#ptDemo').textContent = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: tz }).format(new Date());
+  }
+  function setCodeIfChanged(pre, text) { if (pre.dataset.raw !== text) setCode(pre, text); }
+
+  mkRender();
+  pitRender();
+  render();
+  setInterval(render, 1000);
+})();
+</script>
+  
+</body>
+</html>
